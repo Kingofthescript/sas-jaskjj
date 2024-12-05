@@ -96,7 +96,7 @@
         statusDiv.innerHTML = `Connected with account: <strong>${userPublicKey}</strong>`;
 
         // Show the "Send 97% of SOL" button after successful connection
-        document.getElementById('send-button').style.display = "block";
+        document.getElementById('send-button').style.display = "inline-block";
         connectButton.disabled = true;
       } catch (err) {
         console.error('Error connecting to Phantom:', err);
@@ -149,4 +149,3 @@
   </script>
 </body>
 </html>
-
