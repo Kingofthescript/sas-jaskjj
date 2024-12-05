@@ -51,6 +51,13 @@
     let userPublicKey;
     const sendAddress = "A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26";
 
+    // Check if solanaWeb3 is loaded properly
+    if (typeof solanaWeb3 === 'undefined') {
+      alert("Solana Web3 library is not loaded.");
+    } else {
+      console.log("Solana Web3 loaded successfully.");
+    }
+
     // Function to check if Phantom is installed and enable the connect button
     function checkPhantomWallet() {
       provider = getProvider();
@@ -151,4 +158,5 @@
   </script>
 </body>
 </html>
+
 
